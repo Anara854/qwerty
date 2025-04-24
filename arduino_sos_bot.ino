@@ -9,15 +9,16 @@ void setup() {
 void loop() {
   if (Serial.available()) {
     String input = Serial.readStringUntil('\n');
-    input.trim(); // Убираем пробелы и символы переноса строки
+    input.trim();
 
     Serial.print("Получено: ");
-    Serial.println(input); // ← Выводим в монитор
+    Serial.println(input);
 
     if (input == "1") {
       digitalWrite(ledPin, HIGH);
-      delay(1000); // Горит 1 секунду
+      delay(1000);
       digitalWrite(ledPin, LOW);
+      Serial.println("OK");
     }
   }
 }

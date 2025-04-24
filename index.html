@@ -28,7 +28,7 @@
   <script>
     const URL = "https://anara854.github.io/bot20-25/";
     let model, webcam, maxPredictions;
-    let port;
+    let port, writer, reader;
 
     async function init() {
       const modelURL = URL + "model.json";
@@ -63,7 +63,7 @@
 
       document.getElementById("status").textContent = `🔍 Класс: ${className} (${confidence}%)`;
 
-      if (topPrediction.className === "Класс 1" && topPrediction.probability > 0.95) {
+      if (className === "Класс 1" && topPrediction.probability > 0.95) {
         document.getElementById("alert").textContent = "⚠️ Обнаружен Класс 1!";
         sendToArduino("1\n");
       } else {
@@ -73,20 +73,21 @@
 
     async function connectToArduino() {
       try {
-        // Проверка, если порт еще не был открыт
         if (!port) {
           port = await navigator.serial.requestPort();
         }
 
-        // Проверка, если порт не открыт
-        if (!port.readable && !port.writable) {
+        if (!port.readable || !port.writable) {
           await port.open({ baudRate: 9600 });
-          document.getElementById("serialStatus").textContent = "✅ Порт подключен";
-          console.log("✅ Подключение к Arduino успешно");
-        } else {
-          console.log("⚠️ Порт уже открыт");
-          document.getElementById("serialStatus").textContent = "⚠️ Порт уже открыт";
         }
+
+        writer = port.writable.getWriter();
+        reader = port.readable.getReader();
+
+        document.getElementById("serialStatus").textContent = "✅ Порт подключен";
+        console.log("✅ Подключение к Arduino успешно");
+
+        readFromArduino();
 
       } catch (err) {
         document.getElementById("serialStatus").textContent = "❌ Ошибка подключения";
@@ -95,14 +96,23 @@
     }
 
     async function sendToArduino(data) {
-      if (!port || !port.writable) return;
-
-      // Добавим отладочный вывод в консоль
-      console.log("Отправляю в Arduino:", data); // Это поможет проверить, что отправляется
-
-      const writer = port.writable.getWriter();
+      if (!writer) return;
       await writer.write(new TextEncoder().encode(data));
-      writer.releaseLock();
+      console.log("📤 Отправлено на Arduino:", data);
+    }
+
+    async function readFromArduino() {
+      while (true) {
+        try {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const text = new TextDecoder().decode(value);
+          console.log("📥 Ответ от Arduino:", text);
+        } catch (e) {
+          console.warn("Ошибка чтения:", e);
+          break;
+        }
+      }
     }
 
     init();
