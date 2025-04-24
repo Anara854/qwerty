@@ -73,9 +73,21 @@
 
     async function connectToArduino() {
       try {
-        port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 9600 });
-        document.getElementById("serialStatus").textContent = "✅ Порт подключен";
+        // Проверка, если порт еще не был открыт
+        if (!port) {
+          port = await navigator.serial.requestPort();
+        }
+
+        // Проверка, если порт не открыт
+        if (!port.readable && !port.writable) {
+          await port.open({ baudRate: 9600 });
+          document.getElementById("serialStatus").textContent = "✅ Порт подключен";
+          console.log("✅ Подключение к Arduino успешно");
+        } else {
+          console.log("⚠️ Порт уже открыт");
+          document.getElementById("serialStatus").textContent = "⚠️ Порт уже открыт";
+        }
+
       } catch (err) {
         document.getElementById("serialStatus").textContent = "❌ Ошибка подключения";
         console.error("Ошибка подключения:", err);
@@ -84,6 +96,10 @@
 
     async function sendToArduino(data) {
       if (!port || !port.writable) return;
+
+      // Добавим отладочный вывод в консоль
+      console.log("Отправляю в Arduino:", data); // Это поможет проверить, что отправляется
+
       const writer = port.writable.getWriter();
       await writer.write(new TextEncoder().encode(data));
       writer.releaseLock();
