@@ -1,17 +1,18 @@
-const int ledPin = 9; // Пин, к которому подключён светодиод
+const int ledPin = 9;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(ledPin, OUTPUT); // Настроить пин как выход
+  pinMode(ledPin, OUTPUT);
 }
 
 void loop() {
   if (Serial.available()) {
-    char c = Serial.read();
-    if (c == '1') {
-      digitalWrite(ledPin, HIGH); // Включить светодиод
-      delay(1000);                // Подержать 1 секунду
-      digitalWrite(ledPin, LOW);  // Выключить
+    String input = Serial.readStringUntil('\n');
+    input.trim(); // Убираем пробелы и символы переноса строки
+    if (input == "1") {
+      digitalWrite(ledPin, HIGH);
+      delay(1000);
+      digitalWrite(ledPin, LOW);
     }
   }
 }
